@@ -1,50 +1,25 @@
-import { MemoryRouter as Router, Routes, Route } from 'react-router-dom';
-import icon from '../../assets/icon.svg';
-import './App.css';
+import React, { useState } from 'react';
+import { Layout } from 'antd';
+import Sidebar from './Sidebar';
+import TerminalComponent from './TerminalComponent';
+import Settings from './Settings';
 
-function Hello() {
-  return (
-    <div>
-      <div className="Hello">
-        <img width="200" alt="icon" src={icon} />
-      </div>
-      <h1>electron-react-boilerplate</h1>
-      <div className="Hello">
-        <a
-          href="https://electron-react-boilerplate.js.org/"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="books">
-              📚
-            </span>
-            Read our docs
-          </button>
-        </a>
-        <a
-          href="https://github.com/sponsors/electron-react-boilerplate"
-          target="_blank"
-          rel="noreferrer"
-        >
-          <button type="button">
-            <span role="img" aria-label="folded hands">
-              🙏
-            </span>
-            Donate
-          </button>
-        </a>
-      </div>
-    </div>
-  );
-}
+const { Content } = Layout;
 
-export default function App() {
+const App: React.FC = () => {
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Hello />} />
-      </Routes>
-    </Router>
+    <Layout style={{ height: '100vh' }}>
+      <Sidebar setTheme={setTheme} />
+      <Layout>
+        <Content style={{ padding: '20px', background: theme === 'dark' ? '#1e1e1e' : '#fff' }}>
+          <TerminalComponent theme={theme} />
+          <Settings />
+        </Content>
+      </Layout>
+    </Layout>
   );
-}
+};
+
+export default App;

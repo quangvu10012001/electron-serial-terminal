@@ -22,6 +22,12 @@ const electronHandler = {
       ipcRenderer.once(channel, (_event, ...args) => func(...args));
     },
   },
+  listPorts: () => ipcRenderer.invoke('list-ports'),
+  openPort: (path: string, baudRate: number) =>
+    ipcRenderer.invoke('open-port', path, baudRate),
+  sendData: (data: string) => ipcRenderer.invoke('send-data', data),
+  onSerialData: (callback: (data: string) => void) =>
+    ipcRenderer.on('serial-data', (_event, data) => callback(data)),
 };
 
 contextBridge.exposeInMainWorld('electron', electronHandler);

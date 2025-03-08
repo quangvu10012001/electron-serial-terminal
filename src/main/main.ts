@@ -1,19 +1,13 @@
-/* eslint global-require: off, no-console: off, promise/always-return: off */
-
-/**
- * This module executes inside of electron's main process. You can start
- * electron renderer process from here and communicate with the other processes
- * through IPC.
- *
- * When running `npm run build` or `npm run build:main`, this file is compiled to
- * `./src/main.js` using webpack. This gives us some performance wins.
- */
-import path from 'path';
 import { app, BrowserWindow, shell, ipcMain } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
+import { SerialPort } from "serialport";
+import path from 'path';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+
+let mainWindow: BrowserWindow | null = null;
+let serialPort: SerialPort | null = null;
 
 class AppUpdater {
   constructor() {
@@ -23,12 +17,27 @@ class AppUpdater {
   }
 }
 
-let mainWindow: BrowserWindow | null = null;
-
 ipcMain.on('ipc-example', async (event, arg) => {
   const msgTemplate = (pingPong: string) => `IPC test: ${pingPong}`;
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
+});
+
+ipcMain.handle('list-ports', async () => {
+  return await SerialPort.list();
+});
+
+ipcMain.handle('open-port', async (_event, path: string, baudRate: number) => {
+  if (serialPort) serialPort.close();
+  serialPort = new SerialPort({ path, baudRate });
+
+  serialPort.on('data', (data) => {
+    mainWindow?.webContents.send('serial-data', data.toString());
+  });
+});
+
+ipcMain.handle('send-data', async (_event, data: string) => {
+  if (serialPort) serialPort.write(data);
 });
 
 if (process.env.NODE_ENV === 'production') {
@@ -71,10 +80,12 @@ const createWindow = async () => {
 
   mainWindow = new BrowserWindow({
     show: false,
-    width: 1024,
-    height: 728,
+    width: 1224,
+    height: 1028,
     icon: getAssetPath('icon.png'),
     webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: app.isPackaged
         ? path.join(__dirname, 'preload.js')
         : path.join(__dirname, '../../.erb/dll/preload.js'),
